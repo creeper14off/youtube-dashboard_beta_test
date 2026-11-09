@@ -1,0 +1,512 @@
+<!DOCTYPE html>
+<html lang="fr" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>YouTube Dashboard</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Outlined" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+</head>
+<body class="api-locked">
+    <!-- ===== BARRE LATÉRALE ===== -->
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <img src="https://www.gstatic.com/youtube/img/branding/youtubelogo/svg/youtubelogo.svg"
+                 alt="YouTube" class="sidebar-logo" id="sidebarLogo">
+            <span class="sidebar-title">Studio</span>
+        </div>
+
+        <div class="channel-info">
+            <div class="channel-avatar">YT</div>
+            <div class="channel-details">
+                <span class="channel-name" data-i18n="channel.name">Ma Chaîne</span>
+                <span class="channel-handle" data-i18n="channel.handle">@machaîne</span>
+            </div>
+        </div>
+
+        <nav class="sidebar-nav">
+            <a href="#" class="nav-item active" data-page="overview">
+                <span class="material-icons-outlined">dashboard</span>
+                <span class="nav-label" data-i18n="nav.overview">Vue d'ensemble</span>
+            </a>
+            <a href="#" class="nav-item" data-page="content">
+                <span class="material-icons-outlined">play_circle</span>
+                <span class="nav-label" data-i18n="nav.content">Contenu</span>
+            </a>
+            <a href="#" class="nav-item" data-page="analytics">
+                <span class="material-icons-outlined">analytics</span>
+                <span class="nav-label" data-i18n="nav.analytics">Statistiques</span>
+            </a>
+            <a href="#" class="nav-item" data-page="calendar">
+                <span class="material-icons-outlined">calendar_month</span>
+                <span class="nav-label" data-i18n="nav.calendar">Calendrier</span>
+            </a>
+            <a href="#" class="nav-item" data-page="comments">
+                <span class="material-icons-outlined">chat_bubble</span>
+                <span class="nav-label" data-i18n="nav.comments">Commentaires</span>
+            </a>
+            <a href="#" class="nav-item" data-page="settings">
+                <span class="material-icons-outlined">settings</span>
+                <span class="nav-label" data-i18n="nav.settings">Paramètres</span>
+            </a>
+        </nav>
+
+        <div class="sidebar-footer">
+            <div class="api-status" id="apiStatus">
+                <span class="material-icons-outlined">cloud_off</span>
+                <span class="nav-label" data-i18n="api.disconnected">API non connectée</span>
+            </div>
+        </div>
+    </aside>
+
+    <!-- ===== BOUTON MENU MOBILE ===== -->
+    <button class="menu-toggle" id="menuToggle" aria-label="Menu">
+        <span class="material-icons-outlined">menu</span>
+    </button>
+
+    <!-- ===== CONTENU PRINCIPAL ===== -->
+    <main class="main-content">
+
+        <!-- ========== PAGE : VUE D'ENSEMBLE ========== -->
+        <section class="page active" id="page-overview" data-page="overview">
+            <header class="page-header">
+                <h1 class="page-title" data-i18n="overview.title">Vue d'ensemble de la chaîne</h1>
+                <div class="header-actions">
+                    <div class="period-selector">
+                        <span class="material-icons-outlined">calendar_today</span>
+                        <select id="periodSelect" data-i18n-options="period">
+                            <option value="7">7 derniers jours</option>
+                            <option value="28" selected>28 derniers jours</option>
+                            <option value="90">90 derniers jours</option>
+                            <option value="365">12 derniers mois</option>
+                        </select>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Bannière d'avertissement quand non connecté -->
+            <div class="locked-global-banner">
+                <div class="locked-banner-icon">
+                    <span class="material-icons-outlined">lock</span>
+                </div>
+                <div class="locked-banner-text">
+                    <h3 data-i18n="locked.title">Connectez-vous pour voir vos statistiques</h3>
+                    <p data-i18n="locked.desc">Connectez votre clé API YouTube dans les paramètres pour charger et analyser les données en direct de votre chaîne.</p>
+                </div>
+                <button class="btn-primary" onclick="navigateTo('settings')">
+                    <span class="material-icons-outlined">vpn_key</span>
+                    <span data-i18n="locked.button">Se connecter à l'API</span>
+                </button>
+            </div>
+
+            <!-- Cartes statistiques -->
+            <section class="stats-cards">
+                <div class="stat-card">
+                    <div class="stat-icon views">
+                        <span class="material-icons-outlined">visibility</span>
+                    </div>
+                    <div class="stat-info">
+                        <span class="stat-label" data-i18n="stat.views">Vues</span>
+                        <span class="stat-value" id="totalViews">—</span>
+                        <span class="stat-change" id="viewsChange"></span>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon subscribers">
+                        <span class="material-icons-outlined">people</span>
+                    </div>
+                    <div class="stat-info">
+                        <span class="stat-label" data-i18n="stat.subscribers">Abonnés</span>
+                        <span class="stat-value" id="totalSubscribers">—</span>
+                        <span class="stat-change" id="subscribersChange"></span>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon watchtime">
+                        <span class="material-icons-outlined">play_circle_filled</span>
+                    </div>
+                    <div class="stat-info">
+                        <span class="stat-label" data-i18n="stat.watchtime">Vidéos publiées</span>
+                        <span class="stat-value" id="totalWatchTime">—</span>
+                        <span class="stat-change" id="watchTimeChange"></span>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon revenue">
+                        <span class="material-icons-outlined">monetization_on</span>
+                    </div>
+                    <div class="stat-info">
+                        <span class="stat-label" data-i18n="stat.revenue">Revenus estimés</span>
+                        <span class="stat-value" id="totalRevenue">—</span>
+                        <span class="stat-change" id="revenueChange"></span>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Graphique -->
+            <section class="chart-section">
+                <div class="chart-header">
+                    <h2 class="section-title" data-i18n="chart.title">Performances</h2>
+                    <div class="chart-tabs">
+                        <button class="chart-tab active" data-metric="views" data-i18n="chart.views">Vues</button>
+                        <button class="chart-tab" data-metric="subscribers" data-i18n="chart.subscribers">Abonnés</button>
+                        <button class="chart-tab" data-metric="watchtime" data-i18n="chart.watchtime">Commentaires</button>
+                    </div>
+                </div>
+                <div class="chart-container">
+                    <canvas id="performanceChart"></canvas>
+                </div>
+            </section>
+
+            <!-- Dernières vidéos -->
+            <section class="recent-videos">
+                <h2 class="section-title" data-i18n="videos.title">Dernières vidéos</h2>
+                <div class="videos-grid" id="videosGrid"></div>
+            </section>
+        </section>
+
+        <!-- ========== PAGE : CONTENU ========== -->
+        <section class="page" id="page-content" data-page="content">
+            <header class="page-header">
+                <h1 class="page-title" data-i18n="content.title">Contenu de la chaîne</h1>
+                <div class="header-actions">
+                    <div class="period-selector">
+                        <span class="material-icons-outlined">sort</span>
+                        <select id="contentSort">
+                            <option value="date" data-i18n="content.sort.date">Date (récentes)</option>
+                            <option value="views" data-i18n="content.sort.views">Vues</option>
+                            <option value="likes" data-i18n="content.sort.likes">Likes</option>
+                        </select>
+                    </div>
+                </div>
+            </header>
+            <div class="content-list" id="contentList"></div>
+        </section>
+
+        <!-- ========== PAGE : STATISTIQUES ========== -->
+        <section class="page" id="page-analytics" data-page="analytics">
+            <header class="page-header">
+                <h1 class="page-title" data-i18n="analytics.title">Statistiques détaillées</h1>
+            </header>
+            <div id="analyticsContent"></div>
+        </section>
+
+        <!-- ========== PAGE : CALENDRIER (PROGRAMMATION & RAPPELS) ========== -->
+        <section class="page" id="page-calendar" data-page="calendar">
+            <header class="page-header">
+                <h1 class="page-title" data-i18n="calendar.title">Calendrier & Programmation</h1>
+                <div class="header-actions">
+                    <button class="btn-primary" id="addEventBtn">
+                        <span class="material-icons-outlined">add</span>
+                        <span data-i18n="calendar.add">Ajouter un événement</span>
+                    </button>
+                </div>
+            </header>
+
+            <div class="calendar-layout">
+                <!-- Grille mensuelle -->
+                <div class="calendar-card">
+                    <div class="cal-nav-bar">
+                        <h2 class="cal-month-title" id="calendarMonthYear">Mois Année</h2>
+                        <div class="cal-controls">
+                            <button class="cal-ctrl-btn" id="calPrev" title="Mois précédent">
+                                <span class="material-icons-outlined">chevron_left</span>
+                            </button>
+                            <button class="cal-ctrl-btn today-btn" id="calToday" data-i18n="calendar.today">Aujourd'hui</button>
+                            <button class="cal-ctrl-btn" id="calNext" title="Mois suivant">
+                                <span class="material-icons-outlined">chevron_right</span>
+                            </button>
+                        </div>
+                    </div>
+                    <div id="calendarGrid" class="calendar-grid-container"></div>
+                </div>
+
+                <!-- Prochains événements et rappels -->
+                <div class="calendar-sidebar-card">
+                    <h3 class="cal-sidebar-title" data-i18n="calendar.upcoming">Prochains événements & rappels</h3>
+                    <div id="upcomingEvents" class="upcoming-events-list"></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ========== PAGE : COMMENTAIRES ========== -->
+        <section class="page" id="page-comments" data-page="comments">
+            <header class="page-header">
+                <h1 class="page-title" data-i18n="comments.title">Commentaires</h1>
+            </header>
+            <div id="commentsContent"></div>
+        </section>
+
+        <!-- ========== PAGE : PARAMÈTRES ========== -->
+        <section class="page" id="page-settings" data-page="settings">
+            <header class="page-header">
+                <h1 class="page-title" data-i18n="settings.title">Paramètres</h1>
+            </header>
+
+            <!-- Apparence -->
+            <div class="settings-group">
+                <h2 class="settings-group-title" data-i18n="settings.appearance">Apparence</h2>
+
+                <!-- Thème -->
+                <div class="setting-row">
+                    <div class="setting-info">
+                        <span class="material-icons-outlined">dark_mode</span>
+                        <div>
+                            <div class="setting-label" data-i18n="settings.theme">Thème</div>
+                            <div class="setting-desc" data-i18n="settings.theme.desc">Choisissez l'apparence de l'interface</div>
+                        </div>
+                    </div>
+                    <div class="toggle-group">
+                        <button class="theme-btn active" data-theme="light">
+                            <span class="material-icons-outlined">light_mode</span>
+                            <span data-i18n="settings.theme.light">Clair</span>
+                        </button>
+                        <button class="theme-btn" data-theme="dark">
+                            <span class="material-icons-outlined">dark_mode</span>
+                            <span data-i18n="settings.theme.dark">Sombre</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Langue -->
+                <div class="setting-row">
+                    <div class="setting-info">
+                        <span class="material-icons-outlined">translate</span>
+                        <div>
+                            <div class="setting-label" data-i18n="settings.language">Langue</div>
+                            <div class="setting-desc" data-i18n="settings.language.desc">Choisissez la langue de l'interface</div>
+                        </div>
+                    </div>
+                    <div class="toggle-group">
+                        <button class="lang-btn active" data-lang="fr">
+                            🇫🇷 Français
+                        </button>
+                        <button class="lang-btn" data-lang="en">
+                            🇬🇧 English
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- API YouTube -->
+            <div class="settings-group">
+                <h2 class="settings-group-title" data-i18n="settings.api">API YouTube</h2>
+
+                <div class="setting-row vertical">
+                    <div class="setting-info">
+                        <span class="material-icons-outlined">vpn_key</span>
+                        <div>
+                            <div class="setting-label" data-i18n="settings.api.title">Connexion API YouTube</div>
+                            <div class="setting-desc" data-i18n="settings.api.desc">Connectez votre clé API pour charger automatiquement les statistiques et vidéos réelles de votre chaîne.</div>
+                        </div>
+                    </div>
+
+                    <div class="api-form">
+                        <div class="form-field">
+                            <label data-i18n="settings.api.key">Clé API (YouTube Data API v3)</label>
+                            <input type="text" id="apiKeyInput"
+                                   data-i18n-placeholder="settings.api.key.placeholder"
+                                   placeholder="Ex: AIzaSyD-xxxxxxxxxxxxxxxxxxxxx" autocomplete="off" spellcheck="false">
+                        </div>
+                        <div class="form-field">
+                            <label data-i18n="settings.api.channel">Identifiant de la chaîne (ou Handle @)</label>
+                            <input type="text" id="channelIdInput"
+                                   data-i18n-placeholder="settings.api.channel.placeholder"
+                                   placeholder="Ex: UC_x5XG1OV2P6uZZ5FSM9Ttw ou @machaîne" autocomplete="off" spellcheck="false">
+                        </div>
+
+                        <!-- Bouton d'aide avec point d'interrogation -->
+                        <div class="api-help-container">
+                            <button type="button" class="api-help-trigger" id="openApiHelpBtn">
+                                <span class="help-question-badge">?</span>
+                                <span data-i18n="settings.api.help.btn">Besoin d'aide ? Comment obtenir ma clé API et mon ID ?</span>
+                            </button>
+                        </div>
+
+                        <div class="form-actions">
+                            <button class="btn-primary" id="saveApiBtn">
+                                <span class="material-icons-outlined">sync</span>
+                                <span data-i18n="settings.api.save">Tester et connecter</span>
+                            </button>
+                            <button class="btn-secondary" id="disconnectApiBtn" style="display: none;">
+                                <span class="material-icons-outlined">link_off</span>
+                                <span data-i18n="settings.api.disconnect">Déconnecter la chaîne</span>
+                            </button>
+                        </div>
+
+                        <!-- Statut détaillé de l'API (succès ou message d'erreur clair) -->
+                        <div class="api-form-status-container">
+                            <span class="api-form-status" id="apiFormStatus" data-i18n="settings.api.status.disconnected">Statut : Déconnecté (aucune chaîne active)</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- À propos -->
+            <div class="settings-group">
+                <h2 class="settings-group-title" data-i18n="settings.about">À propos</h2>
+                <div class="setting-row">
+                    <div class="setting-info">
+                        <span class="material-icons-outlined">info</span>
+                        <div>
+                            <div class="setting-label">YouTube Dashboard</div>
+                            <div class="setting-desc" data-i18n="settings.about.desc">Application locale pour consulter les statistiques et planifier le contenu de votre chaîne.</div>
+                        </div>
+                    </div>
+                    <span class="version-badge">v1.2.0</span>
+                </div>
+            </div>
+
+            <!-- Zone de réinitialisation -->
+            <div class="settings-group danger-zone">
+                <h2 class="settings-group-title" data-i18n="settings.reset.title">Réinitialisation</h2>
+                <div class="setting-row">
+                    <div class="setting-info">
+                        <span class="material-icons-outlined">delete_forever</span>
+                        <div>
+                            <div class="setting-label" data-i18n="settings.reset.label">Effacer toutes les données</div>
+                            <div class="setting-desc" data-i18n="settings.reset.desc">Supprime la clé API, la chaîne enregistrée, les événements du calendrier et remet les réglages par défaut.</div>
+                        </div>
+                    </div>
+                    <button class="btn-danger" id="resetAppBtn">
+                        <span class="material-icons-outlined">restart_alt</span>
+                        <span data-i18n="settings.reset.btn">Réinitialiser l'application</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Toast notification -->
+            <div class="toast" id="settingsToast">
+                <span class="material-icons-outlined">check_circle</span>
+                <span data-i18n="settings.saved">✓ Paramètres sauvegardés</span>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- ===== MODAL D'AIDE ET TUTORIEL API (?) ===== -->
+    <div class="modal-backdrop" id="apiHelpModal">
+        <div class="modal-dialog">
+            <div class="modal-header">
+                <div class="modal-title-with-icon">
+                    <span class="help-question-badge large">?</span>
+                    <h3 data-i18n="tutorial.title">Comment obtenir votre clé API YouTube ?</h3>
+                </div>
+                <button class="modal-close-btn" id="closeApiHelpBtn" aria-label="Fermer">
+                    <span class="material-icons-outlined">close</span>
+                </button>
+            </div>
+            <div class="modal-body tutorial-body">
+                <p class="tutorial-intro" data-i18n="tutorial.subtitle">Suivez ces 4 étapes simples et 100% gratuites :</p>
+
+                <!-- Étape 1 -->
+                <div class="tutorial-step-card">
+                    <div class="step-badge">1</div>
+                    <div class="step-content">
+                        <h4 data-i18n="tutorial.step1.title">Étape 1 : Créer un projet Google Cloud</h4>
+                        <p data-i18n="tutorial.step1.desc">Rendez-vous sur la console Google Cloud :</p>
+                        <a href="https://console.cloud.google.com/" target="_blank" rel="noopener noreferrer" class="tutorial-link">
+                            <span class="material-icons-outlined">open_in_new</span> console.cloud.google.com
+                        </a>
+                        <p class="step-subtext" data-i18n="tutorial.step1.sub">Connectez-vous avec votre compte Google et cliquez sur 'Nouveau projet' (nommez-le par exemple 'Mon YouTube Dashboard').</p>
+                    </div>
+                </div>
+
+                <!-- Étape 2 -->
+                <div class="tutorial-step-card">
+                    <div class="step-badge">2</div>
+                    <div class="step-content">
+                        <h4 data-i18n="tutorial.step2.title">Étape 2 : Activer la bibliothèque YouTube API</h4>
+                        <p data-i18n="tutorial.step2.desc">Dans le menu à gauche, allez dans <strong>API et services > Bibliothèque</strong>. Recherchez <code>YouTube Data API v3</code> et cliquez sur <strong>Activer</strong>.</p>
+                    </div>
+                </div>
+
+                <!-- Étape 3 -->
+                <div class="tutorial-step-card">
+                    <div class="step-badge">3</div>
+                    <div class="step-content">
+                        <h4 data-i18n="tutorial.step3.title">Étape 3 : Créer votre clé API</h4>
+                        <p data-i18n="tutorial.step3.desc">Allez dans <strong>API et services > Identifiants</strong>. Cliquez sur <strong>+ Créer des identifiants</strong> en haut, puis sélectionnez <strong>Clé API</strong>. Copiez la clé qui commence par <code>AIza...</code>.</p>
+                    </div>
+                </div>
+
+                <!-- Étape 4 -->
+                <div class="tutorial-step-card">
+                    <div class="step-badge">4</div>
+                    <div class="step-content">
+                        <h4 data-i18n="tutorial.step4.title">Étape 4 : Trouver l'ID de votre chaîne</h4>
+                        <p data-i18n="tutorial.step4.desc">Allez sur <strong>studio.youtube.com</strong>, cliquez sur <strong>Paramètres > Chaîne > Paramètres avancés</strong> (ou <code>youtube.com/account_advanced</code>). Copiez l'<strong>Identifiant de chaîne</strong> (commence par <code>UC...</code>). Vous pouvez aussi simplement utiliser votre identifiant avec <code>@</code> (ex: <code>@machaîne</code>) !</p>
+                    </div>
+                </div>
+
+                <div class="tutorial-security-notice" data-i18n="tutorial.security">
+                    🔒 <strong>Sécurité locale :</strong> Vos identifiants restent stockés exclusivement dans votre navigateur local. Aucune donnée n'est transmise à un serveur tiers.
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-primary" id="closeApiHelpBottomBtn" data-i18n="tutorial.close">J'ai compris, fermer</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== MODAL CRÉATION ÉVÉNEMENT CALENDRIER ===== -->
+    <div class="modal-backdrop" id="calendarModal">
+        <div class="modal-dialog">
+            <div class="modal-header">
+                <h3 data-i18n="calendar.newEvent">Nouvel événement / rappel</h3>
+                <button class="modal-close-btn" id="modalClose" aria-label="Fermer">
+                    <span class="material-icons-outlined">close</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="form-field">
+                    <label data-i18n="calendar.eventTitle">Titre</label>
+                    <input type="text" id="eventTitle" data-i18n-placeholder="calendar.eventTitle.placeholder" placeholder="Ex: Tournage vidéo ou Publication Shorts" autofocus>
+                </div>
+                <div class="form-row-2">
+                    <div class="form-field">
+                        <label data-i18n="calendar.eventDate">Date</label>
+                        <input type="date" id="eventDate">
+                    </div>
+                    <div class="form-field">
+                        <label data-i18n="calendar.eventTime">Heure (optionnel)</label>
+                        <input type="time" id="eventTime">
+                    </div>
+                </div>
+                <div class="form-field">
+                    <label data-i18n="calendar.eventType">Type</label>
+                    <select id="eventType">
+                        <option value="publication" data-i18n="calendar.type.publication">📹 Publication vidéo</option>
+                        <option value="reminder" selected data-i18n="calendar.type.reminder">🔔 Rappel</option>
+                        <option value="note" data-i18n="calendar.type.note">📝 Note / Idée</option>
+                    </select>
+                </div>
+                <div class="form-field">
+                    <label data-i18n="calendar.eventNotes">Notes / Description</label>
+                    <textarea id="eventNotes" rows="3" data-i18n-placeholder="calendar.eventNotes.placeholder" placeholder="Détails, liens, checklist..."></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-secondary" id="modalCancel" data-i18n="calendar.cancel">Annuler</button>
+                <button class="btn-primary" id="modalSubmit" data-i18n="calendar.save">Enregistrer</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Overlay mobile -->
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+    <!-- ===== SCRIPTS ===== -->
+    <script src="js/settings.js"></script>
+    <script src="js/lang.js"></script>
+    <script src="js/youtube-api.js"></script>
+    <script src="js/data.js"></script>
+    <script src="js/calendar.js"></script>
+    <script src="js/chart.js"></script>
+    <script src="js/app.js"></script>
+</body>
+</html>
